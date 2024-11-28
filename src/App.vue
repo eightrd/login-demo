@@ -1,0 +1,100 @@
+<script setup lang="ts">
+import { ref } from 'vue';
+import { allComponents, provideVSCodeDesignSystem } from '@vscode/webview-ui-toolkit';
+import { vscodeApi } from './utils';
+
+provideVSCodeDesignSystem().register(allComponents);
+
+const message = ref('');
+const state = ref('');
+const username = ref('');
+const password = ref('');
+
+const onSetState = () => {
+  vscodeApi.setState(state.value);
+};
+
+const onGetState = () => {
+  state.value = vscodeApi.getState() || '';
+};
+
+function onPostMessage() {
+  vscodeApi.postMessage({
+    type: 'hello',
+    data: `💬: ${message.value || 'Empty'}`,
+  });
+
+  setTimeout(() => {
+    vscodeApi.post('hello3', `⛅: ${message.value || 'Empty'}`);
+  }, 100);
+}
+
+const receive = ref('');
+function onPostAndReceive() {
+  vscodeApi.postAndReceive('hello2', `😀: ${message.value || 'Empty'}`).then((data: any) => {
+    console.log('data', data);
+    receive.value = data;
+  });
+}
+
+vscodeApi.on('hello3', (data: any) => {
+  console.log('watch [hello3]: ', data);
+});
+
+function login() {
+  vscodeApi.post('setConfig', {
+    key: 'userName',
+    value: username.value,
+  });
+  vscodeApi.post('setConfig', {
+    key: 'password',
+    value: password.value,
+  });
+}
+</script>
+
+<template>
+  <main>
+    <vscode-text-field :value="username" @input="e => (username = e.target.value)">
+      Please enter username
+    </vscode-text-field>
+    <vscode-text-field :value="password" @input="e => (password = e.target.value)">
+      Please enter password
+    </vscode-text-field>
+
+    <vscode-button @click="login">登录</vscode-button>
+
+    <h1>~~~~~~~~~~~Hello Vue! testtest~~~~~~~~</h1>
+    <vscode-button @click="onPostMessage">Post Message</vscode-button>
+    <div style="margin-top: 8px">
+      <vscode-button @click="onPostAndReceive"> Post Message And Receive </vscode-button>
+      <span v-if="receive" style="margin-left: 8px">{{ receive }}</span>
+    </div>
+    <div>
+      <vscode-text-field :value="message" @input="e => (message = e.target.value)">
+        Please enter a message
+      </vscode-text-field>
+      <div>Message is: {{ message }}</div>
+    </div>
+    <div>
+      <vscode-text-field :value="state" @input="e => (state = e.target.value)">
+        Please enter a state
+      </vscode-text-field>
+      <div>State is: {{ state }}</div>
+      <div>
+        <vscode-button @click="onSetState">setState</vscode-button>
+        <vscode-button style="margin-left: 8px" @click="onGetState">getState</vscode-button>
+      </div>
+    </div>
+  </main>
+</template>
+
+<style>
+main {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  height: 100%;
+}
+</style>
